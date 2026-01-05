@@ -62,7 +62,7 @@ public class Heap
      */
     public HeapItem findMin()
     {
-        return min; // should be replaced by student code
+        return min; 
     }
 
     /**
@@ -72,7 +72,38 @@ public class Heap
      */
     public void deleteMin()
     {
-        
+        HeapNode minNode = min.node;
+
+        // remove minnode from root list
+        minNode.next.prev = minNode.prev;
+        minNode.prev.next = minNode.next;
+        this.size--;
+
+
+        HeapNode child = minNode.child;
+        if (child != null) {
+            child.parent = null;
+            Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
+            heap2.head = child.item;
+            heap2.last = child.prev.item;
+            
+            heap2.size = 0; // not adding size in meld
+
+            //finding min in min children O(log n) --> max degree = O(log n)
+            HeapNode current = child;
+            heap2.min = child.item;
+            int minKey = child.item.key;
+            current = current.next;
+            while (current != child) {
+                if (current.item.key < minKey) {
+                    minKey = current.item.key;
+                    heap2.min = current.item;
+                }
+                current = current.next;   
+            }
+
+            this.meld(heap2);
+        }
     }
 
     /**
