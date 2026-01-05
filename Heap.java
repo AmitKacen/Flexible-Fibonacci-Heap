@@ -121,6 +121,8 @@ public class Heap
         }
     }
 
+    
+
     /**
      * pre: 0<=diff<=x.key
      * 
@@ -134,19 +136,32 @@ public class Heap
     }
 
     private void heapifyUp(HeapNode node) {
-        if(node.parent == null) {
-            return; // node is root
+        
+        while (node.parent != null && node.item.key < node.parent.item.key) {
+            swapWithParent(node);
+            node = node.parent;
         }
-        if(node.item.key < node.parent.item.key) {
-            HeapNode temp = new HeapNode(node.item, node.child, node.next, node.prev, node.parent, node.rank); // clone node
-            node.child = temp.parent;
-            node.parent = temp.parent.parent;
-            node.next = temp.parent.next;
-            node.prev = temp.parent.prev;
-            node.rank = temp.parent.rank;
 
-            
+        // Update min if needed
+        if (node.item.key < min.key) {
+            min = node.item;
         }
+    }
+
+    private void swapWithParent(HeapNode child) {
+        HeapNode parent = child.parent;
+        if (parent == null || child.item.key >= parent.item.key) {
+            return;  // No swap needed
+        }
+        
+        // Swap the items (keys and info)
+        HeapItem tempItem = child.item;
+        child.item = parent.item;
+        parent.item = tempItem;
+        
+        // Update node references in items
+        child.item.node = child;
+        parent.item.node = parent;
     }
     /**
      * Delete the x from the heap.
