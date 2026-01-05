@@ -86,7 +86,7 @@ public class Heap
             Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
             heap2.head = child.item;
             heap2.last = child.prev.item;
-            
+
             heap2.size = 0; // not adding size in meld
 
             //finding min in min children O(log n) --> max degree = O(log n)
@@ -103,23 +103,52 @@ public class Heap
             }
 
             this.meld(heap2);
+            if(lazyMelds) {
+                succesiveLinking();
+            }
+        }
+        // update min-> log(n) time beacuse after meld there are o(log n) trees
+        HeapNode current = head.node;
+        int minKey = head.key;
+        min = head;
+        current = current.next;
+        while (current != child) {
+            if (current.item.key < minKey) {
+                minKey = current.item.key;
+                min = current.item;
+            }
+            current = current.next;   
         }
     }
 
     /**
-     * 
      * pre: 0<=diff<=x.key
      * 
      * Decrease the key of x by diff and fix the heap.
      * 
      */
     public void decreaseKey(HeapItem x, int diff) 
-    {    
+    {   
+
         return; // should be replaced by student code
     }
 
+    private void heapifyUp(HeapNode node) {
+        if(node.parent == null) {
+            return; // node is root
+        }
+        if(node.item.key < node.parent.item.key) {
+            HeapNode temp = new HeapNode(node.item, node.child, node.next, node.prev, node.parent, node.rank); // clone node
+            node.child = temp.parent;
+            node.parent = temp.parent.parent;
+            node.next = temp.parent.next;
+            node.prev = temp.parent.prev;
+            node.rank = temp.parent.rank;
+
+            
+        }
+    }
     /**
-     * 
      * Delete the x from the heap.
      *
      */
@@ -337,6 +366,7 @@ public class Heap
         public HeapNode prev;
         public HeapNode parent;
         public int rank;
+        public boolean marked;
 
         public HeapNode(HeapItem item, HeapNode child, HeapNode next, HeapNode prev, HeapNode parent, int rank) 
         {
@@ -346,6 +376,7 @@ public class Heap
             this.prev = prev;
             this.parent = parent;
             this.rank = rank;
+            this.marked = false;
         }
     }
     
