@@ -11,6 +11,9 @@ public class Heap
     public final boolean lazyMelds;
     public final boolean lazyDecreaseKeys;
     public HeapItem min;
+    public HeapItem head;
+    public HeapItem last;
+    public int size;
     
     /**
      *
@@ -21,7 +24,10 @@ public class Heap
     {
         this.lazyMelds = lazyMelds;
         this.lazyDecreaseKeys = lazyDecreaseKeys;
-        // student code can be added here
+        this.min = null;
+        this.head = null;
+        this.last = null;
+        this.size = 0;
     }
 
     /**
@@ -33,17 +39,30 @@ public class Heap
      */
     public HeapItem insert(int key, String info) 
     {    
-        return null; // should be replaced by student code
+        HeapItem nodeitem = new HeapItem(key, info);
+        HeapNode node = new HeapNode(nodeitem, null, null, null, null, 0);
+        nodeitem.node = node;
+        node.next = node;
+        node.prev = node;
+
+        Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
+        heap2.min = nodeitem;
+        heap2.head = nodeitem;
+        heap2.last = nodeitem;
+        heap2.size = 1; 
+
+        this.meld(heap2);
+        return null; // should be replaced by student code 
+
     }
 
     /**
-     * 
      * Return the minimal HeapNode, null if empty.
      *
      */
     public HeapItem findMin()
     {
-        return null; // should be replaced by student code
+        return min; 
     }
 
     /**
@@ -53,7 +72,38 @@ public class Heap
      */
     public void deleteMin()
     {
-        return; // should be replaced by student code
+        HeapNode minNode = min.node;
+
+        // remove minnode from root list
+        minNode.next.prev = minNode.prev;
+        minNode.prev.next = minNode.next;
+        this.size--;
+
+
+        HeapNode child = minNode.child;
+        if (child != null) {
+            child.parent = null;
+            Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
+            heap2.head = child.item;
+            heap2.last = child.prev.item;
+            
+            heap2.size = 0; // not adding size in meld
+
+            //finding min in min children O(log n) --> max degree = O(log n)
+            HeapNode current = child;
+            heap2.min = child.item;
+            int minKey = child.item.key;
+            current = current.next;
+            while (current != child) {
+                if (current.item.key < minKey) {
+                    minKey = current.item.key;
+                    heap2.min = current.item;
+                }
+                current = current.next;   
+            }
+
+            this.meld(heap2);
+        }
     }
 
     /**
@@ -177,6 +227,16 @@ public class Heap
         public HeapNode prev;
         public HeapNode parent;
         public int rank;
+
+        public HeapNode(HeapItem item, HeapNode child, HeapNode next, HeapNode prev, HeapNode parent, int rank) 
+        {
+            this.item = item;
+            this.child = child;
+            this.next = next;
+            this.prev = prev;
+            this.parent = parent;
+            this.rank = rank;
+        }
     }
     
     /**
@@ -187,5 +247,14 @@ public class Heap
         public HeapNode node;
         public int key;
         public String info;
+        
+        public HeapItem(int key, String info) {
+            this.key = key;
+            this.info = info;
+            this.node = null;
+        }
     }
+
+
 }
+
