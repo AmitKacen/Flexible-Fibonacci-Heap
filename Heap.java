@@ -87,7 +87,16 @@ public class Heap
      */
     public void meld(Heap heap2)
     {
+        last.next = heap2.head;
+
         return; // should be replaced by student code           
+    }
+
+     private void succesiveLinking() {
+
+        int arraySize = (int) (2 * Math.ceil(Math.log(size())));
+        HeapNode[] bucket = new HeapNode[arraySize];
+        
     }
     
     
