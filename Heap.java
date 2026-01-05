@@ -137,18 +137,128 @@ public class Heap
      */
     public void meld(Heap heap2)
     {
-        last.next = heap2.head;
+        // melded heaps
+        last.node.next = heap2.head.node;
+        heap2.last.node.next = head.node;
+        size += heap2.size;
 
-        return; // should be replaced by student code           
+        // update min
+        if (heap2.min != null) {
+            if (this.min == null || heap2.min.key < this.min.key) {
+                this.min = heap2.min;
+            }
+        }
+
+        // consolidate if not lazy melds
+        if (!this.lazyMelds) {
+            succesiveLinking();
+        } else {
+            
+        }
+        return;          
     }
+    
 
      private void succesiveLinking() {
 
+        // Array size based on max possible rank: O(log_phi(n))
         int arraySize = (int) (2 * Math.ceil(Math.log(size())));
         HeapNode[] bucket = new HeapNode[arraySize];
-        
+
+        // Initialize all buckets to null
+        for (int i = 0; i < arraySize; i++) {
+            bucket[i] = null;
+        }
+
+        // Consolidate and rebuild root list
+        HeapNode x = consolidate(bucket);
+        head = x.item;
+        last = x.prev.item;
     }
-    
+
+
+    private HeapNode link(HeapNode x, HeapNode y) {
+        // Links two trees of same rank - smaller key becomes parent
+
+        // Ensure x has smaller key
+        if (x.item.key > y.item.key) {
+            HeapNode temp = x;
+            x = y;
+            y = temp;
+        }
+        
+        // add y as child of x
+        if (x.child == null) {
+            // y becomes the only child of x
+            y.next = y;
+            y.prev = y;
+        } else {
+            // insert y into the child list of x
+            y.next = x.child.next;
+            y.prev = x.child;
+            x.child.next.prev = y;
+            x.child.next = y;
+        }
+        
+        // update pointers and rank
+        x.child = y;
+        y.parent = x;
+        x.rank++;
+        
+        return x;
+    }
+
+    private void toBucket(HeapNode[] bucket) {
+        // Insert all roots into buckets by rank, linking trees of same rank
+
+        // Break circularity of root list for traversal
+        head.node.prev.next = null;
+
+        HeapNode x = head.node;
+        while(x != null) {
+            HeapNode y = x;
+            x = x.next;    // save next before modifying y
+            
+            y.parent = null;  // roots have no parent
+            
+            // Link trees of same rank
+            while (bucket[y.rank] != null) {
+                y = link(y, bucket[y.rank]);
+                bucket[y.rank - 1] = null;  // B[y.rank - 1] ← null
+            }
+            bucket[y.rank] = y;
+        }  
+    }
+      
+    private HeapNode fromBucket(HeapNode[] bucket) {
+        // Rebuild root list from buckets
+        
+        HeapNode x = null;  // new root list head
+
+        for (int i = 0; i < bucket.length; i++) {
+            if (bucket[i] != null) {
+                if (x == null) {
+                    // first tree found - initialize root list
+                    x = bucket[i];
+                    x.next = x;
+                    x.prev = x;
+                } else {
+                    // insert bucket[i] into root list at the end
+                    bucket[i].next = x;
+                    x.prev.next = bucket[i];
+                    bucket[i].prev = x.prev;
+                    x.prev = bucket[i];
+                }
+            }
+        }
+        return x;
+    }
+
+    private HeapNode consolidate(HeapNode[] bucket) {
+        // Consolidate the root list into the bucket array
+        toBucket(bucket);
+        return fromBucket(bucket);
+    }
     
     /**
      * 
@@ -157,7 +267,7 @@ public class Heap
      */
     public int size()
     {
-        return 46; // should be replaced by student code
+        return size(); // should be replaced by student code
     }
 
 
