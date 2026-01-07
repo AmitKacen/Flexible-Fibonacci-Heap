@@ -63,7 +63,7 @@ public class Heap
         heap2.numTrees = 1;
 
         this.meld(heap2);
-        return null; // should be replaced by student code 
+        return nodeitem; // should be replaced by student code 
 
     }
 
@@ -83,11 +83,34 @@ public class Heap
      */
     public void deleteMin()
     {
+        if (min == null) {
+            return; // heap is empty
+        }
+        
         HeapNode minNode = min.node;
+
+        // Handle single node case
+        if (this.size == 1) {
+            this.head = null;
+            this.last = null;
+            this.min = null;
+            this.size = 0;
+            this.numTrees = 0;
+            return;
+        }
 
         // remove minnode from root list
         minNode.next.prev = minNode.prev;
         minNode.prev.next = minNode.next;
+
+        // Update head/last if needed
+        if (this.head.node == minNode) {
+            this.head = minNode.next.item;
+        }
+        if (this.last.node == minNode) {
+            this.last = minNode.prev.item;
+        }
+        
         this.numTrees--; // removing min node decreases numTrees by 1
         int numChildren = minNode.rank; // number of children of min node after which we will update numTrees
         this.size--;
@@ -95,16 +118,25 @@ public class Heap
 
         HeapNode child = minNode.child;
         if (child != null) {
-            child.parent = null;
+            // Unmark and remove parent from all children
+            HeapNode current = child;
+            do {
+                current.parent = null;
+                if (current.marked) {
+                    current.marked = false;
+                    this.numMarkedNodes--;
+                }
+                current = current.next;
+            } while (current != child);
+            
             Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
             heap2.head = child.item;
             heap2.last = child.prev.item;
             heap2.numTrees = numChildren;
+            heap2.size = 0;
 
-            heap2.size = 0; // not adding size in meld
-
-            //finding min in min children O(log n) --> max degree = O(log n)
-            HeapNode current = child;
+            //finding min in min children for meld O(log n) --> max degree = O(log n)
+            current = child;
             heap2.min = child.item;
             int minKey = child.item.key;
             current = current.next;
@@ -123,10 +155,11 @@ public class Heap
         }
         // update min-> log(n) time beacuse after meld there are o(log n) trees
         HeapNode current = head.node;
-        int minKey = head.key;
+        HeapNode start = head.node;  
         min = head;
+        int minKey = head.key;
         current = current.next;
-        while (current != child) {
+        while (current != start) {   
             if (current.item.key < minKey) {
                 minKey = current.item.key;
                 min = current.item;
@@ -179,6 +212,7 @@ public class Heap
         }
         
         // Swap the items (keys and info)
+        totalHeapifyCosts++;
         HeapItem tempItem = child.item;
         child.item = parent.item;
         parent.item = tempItem;
@@ -193,6 +227,7 @@ public class Heap
         if (y.parent != null){
             if (!y.marked){
                 y.marked = true;
+                numMarkedNodes++;
             }
             else{
                 cascadingCut(y, y.parent);
@@ -201,7 +236,12 @@ public class Heap
     }
 
     private void cut(HeapNode x, HeapNode y){
+        totalCuts++;
+        // remove x from child list of y
         x.parent = null;
+        if (x.marked){
+            numMarkedNodes--;
+        }
         x.marked = false;
         y.rank--;
         if (x.next == x){
@@ -243,11 +283,36 @@ public class Heap
      */
     public void meld(Heap heap2)
     {
+        if (heap2.size == 0 || heap2 == null) {
+            return; // nothing to meld
+        }
+        if (this.size == 0) {
+            // this heap is empty, so just copy heap2's fields
+            this.min = heap2.min;
+            this.head = heap2.head;
+            this.last = heap2.last;
+            this.size = heap2.size;
+            this.numTrees = heap2.numTrees;
+            this.numMarkedNodes = heap2.numMarkedNodes;
+            this.totalLinks = heap2.totalLinks;
+            this.totalCuts = heap2.totalCuts;
+            this.totalHeapifyCosts = heap2.totalHeapifyCosts;
+            return;
+        }
         // melded heaps
         last.node.next = heap2.head.node;
         heap2.last.node.next = head.node;
+        head.node.prev = heap2.last.node;
+        heap2.head.node.prev = last.node;
+        this.last = heap2.last;
         size += heap2.size;
+
+        // reserve fields history
         numTrees += heap2.numTrees;
+        numMarkedNodes += heap2.numMarkedNodes;
+        totalLinks += heap2.totalLinks;
+        totalCuts += heap2.totalCuts;
+        totalHeapifyCosts += heap2.totalHeapifyCosts;
 
         // update min
         if (heap2.min != null) {
@@ -259,8 +324,6 @@ public class Heap
         // consolidate if not lazy melds
         if (!this.lazyMelds) {
             succesiveLinking();
-        } else {
-            
         }
         return;          
     }
@@ -331,6 +394,7 @@ public class Heap
             // Link trees of same rank
             while (bucket[y.rank] != null) {
                 y = link(y, bucket[y.rank]);
+                totalLinks++;
                 bucket[y.rank - 1] = null;  // B[y.rank - 1] ← null
             }
             bucket[y.rank] = y;
@@ -376,12 +440,11 @@ public class Heap
      */
     public int size()
     {
-        return size(); // should be replaced by student code
+        return size; // should be replaced by student code
     }
 
 
     /**
-     * 
      * Return the number of trees in the heap.
      * 
      */
