@@ -152,10 +152,10 @@ public class Heap
             }
 
             this.meld(heap2);
-            succesiveLinking();
+            
             
         }
-
+        succesiveLinking();
         // update min-> log(n) time beacuse after meld there are o(log n) trees
         HeapNode current = head.node;
         HeapNode start = head.node;  
@@ -342,8 +342,12 @@ public class Heap
 
      private void succesiveLinking() {
 
+        if (size <= 1) {
+            return; // no need to consolidate
+        }
+        
         // Array size based on max possible rank: O(log_phi(n))
-        int arraySize = (int) (2 * Math.ceil(Math.log(size())));
+        int arraySize = (int) Math.ceil(Math.log(size()) / Math.log(2)) + 2;
         HeapNode[] bucket = new HeapNode[arraySize];
 
         // Initialize all buckets to null
