@@ -14,6 +14,11 @@ public class Heap
     public HeapItem head;
     public HeapItem last;
     public int size;
+    public int numTrees;
+    public int numMarkedNodes;
+    public int totalLinks;
+    public int totalCuts;
+    public int totalHeapifyCosts;
     
     /**
      *
@@ -28,6 +33,11 @@ public class Heap
         this.head = null;
         this.last = null;
         this.size = 0;
+        this.numTrees = 0;
+        this.numMarkedNodes = 0;
+        this.totalLinks = 0;
+        this.totalCuts = 0;
+        this.totalHeapifyCosts = 0;
     }
 
     /**
@@ -50,6 +60,7 @@ public class Heap
         heap2.head = nodeitem;
         heap2.last = nodeitem;
         heap2.size = 1; 
+        heap2.numTrees = 1;
 
         this.meld(heap2);
         return null; // should be replaced by student code 
@@ -77,6 +88,8 @@ public class Heap
         // remove minnode from root list
         minNode.next.prev = minNode.prev;
         minNode.prev.next = minNode.next;
+        this.numTrees--; // removing min node decreases numTrees by 1
+        int numChildren = minNode.rank; // number of children of min node after which we will update numTrees
         this.size--;
 
 
@@ -86,6 +99,7 @@ public class Heap
             Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
             heap2.head = child.item;
             heap2.last = child.prev.item;
+            heap2.numTrees = numChildren;
 
             heap2.size = 0; // not adding size in meld
 
@@ -131,8 +145,18 @@ public class Heap
      */
     public void decreaseKey(HeapItem x, int diff) 
     {   
-
-        return; // should be replaced by student code
+        x.key = x.key - diff;
+        if(x.key < min.key){
+            min = x;
+        }
+        if(lazyDecreaseKeys){
+            if(x.node.parent != null && x.key < x.node.parent.item.key){
+                cascadingCut(x.node, x.node.parent);
+            }
+        }
+        else{
+            heapifyUp(x.node);
+        }
     }
 
     private void heapifyUp(HeapNode node) {
@@ -163,13 +187,51 @@ public class Heap
         child.item.node = child;
         parent.item.node = parent;
     }
+
+    private void cascadingCut(HeapNode x, HeapNode y){
+        cut(x, y);
+        if (y.parent != null){
+            if (!y.marked){
+                y.marked = true;
+            }
+            else{
+                cascadingCut(y, y.parent);
+            }
+        }
+    }
+
+    private void cut(HeapNode x, HeapNode y){
+        x.parent = null;
+        x.marked = false;
+        y.rank--;
+        if (x.next == x){
+            y.child = null;
+        }
+        else{
+            y.child = x.next;
+            x.prev.next = x.next;
+            x.next.prev = x.prev;
+        }
+
+        // create new heap with x and meld
+        x.next = x;
+        x.prev = x;
+        Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
+        heap2.head = x.item;
+        heap2.last = x.item;
+        heap2.size = 0; // not adding size in meld
+        heap2.min = x.item; 
+        heap2.numTrees = 1;
+        this.meld(heap2);
+    }
     /**
      * Delete the x from the heap.
      *
      */
     public void delete(HeapItem x) 
     {    
-        return; // should be replaced by student code
+        decreaseKey(x, Integer.MAX_VALUE);
+        deleteMin();
     }
 
 
@@ -185,6 +247,7 @@ public class Heap
         last.node.next = heap2.head.node;
         heap2.last.node.next = head.node;
         size += heap2.size;
+        numTrees += heap2.numTrees;
 
         // update min
         if (heap2.min != null) {
@@ -278,9 +341,11 @@ public class Heap
         // Rebuild root list from buckets
         
         HeapNode x = null;  // new root list head
+        numTrees = 0;
 
         for (int i = 0; i < bucket.length; i++) {
             if (bucket[i] != null) {
+                numTrees++;
                 if (x == null) {
                     // first tree found - initialize root list
                     x = bucket[i];
@@ -322,18 +387,17 @@ public class Heap
      */
     public int numTrees()
     {
-        return 46; // should be replaced by student code
+        return numTrees; // should be replaced by student code
     }
     
     
     /**
-     * 
      * Return the number of marked nodes in the heap.
      * 
      */
     public int numMarkedNodes()
     {
-        return 46; // should be replaced by student code
+        return numMarkedNodes; // should be replaced by student code
     }
     
     
@@ -344,7 +408,7 @@ public class Heap
      */
     public int totalLinks()
     {
-        return 46; // should be replaced by student code
+        return totalLinks; // should be replaced by student code
     }
     
     
@@ -355,7 +419,7 @@ public class Heap
      */
     public int totalCuts()
     {
-        return 46; // should be replaced by student code
+        return totalCuts; // should be replaced by student code
     }
     
 
@@ -366,7 +430,7 @@ public class Heap
      */
     public int totalHeapifyCosts()
     {
-        return 46; // should be replaced by student code
+        return totalHeapifyCosts; // should be replaced by student code
     }
     
     
