@@ -49,12 +49,14 @@ public class Heap
      */
     public HeapItem insert(int key, String info) 
     {    
+        // create new node
         HeapItem nodeitem = new HeapItem(key, info);
         HeapNode node = new HeapNode(nodeitem, null, null, null, null, 0);
         nodeitem.node = node;
         node.next = node;
         node.prev = node;
 
+        // create new heap with the node and meld
         Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
         heap2.min = nodeitem;
         heap2.head = nodeitem;
@@ -63,7 +65,7 @@ public class Heap
         heap2.numTrees = 1;
 
         this.meld(heap2);
-        return nodeitem; // should be replaced by student code 
+        return nodeitem; 
 
     }
 
@@ -129,6 +131,7 @@ public class Heap
                 current = current.next;
             } while (current != child);
             
+            // create new heap with children and meld
             Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
             heap2.head = child.item;
             heap2.last = child.prev.item;
@@ -149,10 +152,10 @@ public class Heap
             }
 
             this.meld(heap2);
-            if(lazyMelds) {
-                succesiveLinking();
-            }
+            succesiveLinking();
+            
         }
+
         // update min-> log(n) time beacuse after meld there are o(log n) trees
         HeapNode current = head.node;
         HeapNode start = head.node;  
@@ -178,28 +181,31 @@ public class Heap
      */
     public void decreaseKey(HeapItem x, int diff) 
     {   
-        x.key = x.key - diff;
+        x.key = x.key - diff; // update key
+        // update min if needed
         if(x.key < min.key){
             min = x;
         }
+        // if lazy decrease keys is on, do cascading cut
         if(lazyDecreaseKeys){
             if(x.node.parent != null && x.key < x.node.parent.item.key){
                 cascadingCut(x.node, x.node.parent);
             }
         }
+        // else, do heapify up
         else{
             heapifyUp(x.node);
         }
     }
 
     private void heapifyUp(HeapNode node) {
-        
+        // while node parent isnt root and node key < parent key do swap
         while (node.parent != null && node.item.key < node.parent.item.key) {
             swapWithParent(node);
             node = node.parent;
         }
 
-        // Update min if needed
+        // Update min if needed (maybe not needed here, but just in case)
         if (node.item.key < min.key) {
             min = node.item;
         }
@@ -207,6 +213,7 @@ public class Heap
 
     private void swapWithParent(HeapNode child) {
         HeapNode parent = child.parent;
+        // if node is root or no need to swap -> stop
         if (parent == null || child.item.key >= parent.item.key) {
             return;  // No swap needed
         }
@@ -224,11 +231,14 @@ public class Heap
 
     private void cascadingCut(HeapNode x, HeapNode y){
         cut(x, y);
+        // if y is not root
         if (y.parent != null){
+            // if unmarked, mark it and stop
             if (!y.marked){
                 y.marked = true;
                 numMarkedNodes++;
             }
+            // else, continue cutting
             else{
                 cascadingCut(y, y.parent);
             }
@@ -270,6 +280,7 @@ public class Heap
      */
     public void delete(HeapItem x) 
     {    
+        // decrease key to MIN_VALUE and delete min
         decreaseKey(x, Integer.MAX_VALUE);
         deleteMin();
     }
