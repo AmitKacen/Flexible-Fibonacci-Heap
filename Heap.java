@@ -84,91 +84,76 @@ public class Heap
      *
      */
     public void deleteMin()
-    {
-        if (min == null) {
+    {   // case 0 : empty heap
+        if (head == null){
             return; // heap is empty
         }
-        
-        HeapNode minNode = min.node;
-
-        // Handle single node case
-        if (this.size == 1) {
-            this.head = null;
-            this.last = null;
-            this.min = null;
-            this.size = 0;
-            this.numTrees = 0;
+        if (size == 1){
+            head = null;
+            last = null;
+            min = null;
+            size = 0;
+            numTrees = 0;
             return;
         }
+        HeapNode minNode = min.node;
 
-        // remove minnode from root list
-        minNode.next.prev = minNode.prev;
-        minNode.prev.next = minNode.next;
+        // case 1 : only one tree
+        if (numTrees == 1){
+            head = null;
+            last = null;
+        }
+        else{ // case 2 : more than one tree
+            minNode.prev.next = minNode.next;
+            minNode.next.prev = minNode.prev;
+            if (head == min){
+                head = minNode.next.item;
+            }
+            if (last == min){
+                last = minNode.prev.item;
+            }
+        }
 
-        // Update head/last if needed
-        if (this.head.node == minNode) {
-            this.head = minNode.next.item;
-        }
-        if (this.last.node == minNode) {
-            this.last = minNode.prev.item;
-        }
-        
-        this.numTrees--; // removing min node decreases numTrees by 1
-        int numChildren = minNode.rank; // number of children of min node after which we will update numTrees
         this.size--;
+        this.numTrees--;
+        this.min = null;
 
-
+        // remove marked and parent pointer
         HeapNode child = minNode.child;
-        if (child != null) {
-            // Unmark and remove parent from all children
+        if(child != null){
             HeapNode current = child;
-            do {
+            do{
                 current.parent = null;
-                if (current.marked) {
+                if (current.marked){
                     current.marked = false;
-                    this.numMarkedNodes--;
+                    numMarkedNodes--;
                 }
                 current = current.next;
             } while (current != child);
-            
+
             // create new heap with children and meld
             Heap heap2 = new Heap(this.lazyMelds, this.lazyDecreaseKeys);
             heap2.head = child.item;
             heap2.last = child.prev.item;
-            heap2.numTrees = numChildren;
-            heap2.size = 0;
-
-            //finding min in min children for meld O(log n) --> max degree = O(log n)
-            current = child;
-            heap2.min = child.item;
-            int minKey = child.item.key;
-            current = current.next;
-            while (current != child) {
-                if (current.item.key < minKey) {
-                    minKey = current.item.key;
-                    heap2.min = current.item;
-                }
-                current = current.next;   
-            }
-
-            this.meld(heap2);
-            
-            
+            heap2.size = 0; // not adding size in meld
+            heap2.min = null; 
+            heap2.numTrees = minNode.rank;
+            meld(heap2);
         }
+
         succesiveLinking();
-        // update min-> log(n) time beacuse after meld there are o(log n) trees
+
+        // update min
         HeapNode current = head.node;
-        HeapNode start = head.node;  
-        min = head;
-        int minKey = head.key;
-        current = current.next;
-        while (current != start) {   
-            if (current.item.key < minKey) {
-                minKey = current.item.key;
+        do {
+            if (min == null || current.item.key < min.key) {
                 min = current.item;
             }
-            current = current.next;   
-        }
+            current = current.next;
+        } while (current != head.node);
+
+        
+
     }
 
     
@@ -294,22 +279,23 @@ public class Heap
      */
     public void meld(Heap heap2)
     {
-        if (heap2.size == 0 || heap2 == null) {
+        if (heap2 == null || heap2.head == null) {
             return; // nothing to meld
         }
-        if (this.size == 0) {
+        if (this.head == null) {
             // this heap is empty, so just copy heap2's fields
             this.min = heap2.min;
             this.head = heap2.head;
             this.last = heap2.last;
-            this.size = heap2.size;
+            this.size += heap2.size;
             this.numTrees = heap2.numTrees;
-            this.numMarkedNodes = heap2.numMarkedNodes;
-            this.totalLinks = heap2.totalLinks;
-            this.totalCuts = heap2.totalCuts;
-            this.totalHeapifyCosts = heap2.totalHeapifyCosts;
+            this.numMarkedNodes += heap2.numMarkedNodes;
+            this.totalLinks += heap2.totalLinks;
+            this.totalCuts += heap2.totalCuts;
+            this.totalHeapifyCosts += heap2.totalHeapifyCosts;
             return;
         }
+
         // melded heaps
         last.node.next = heap2.head.node;
         heap2.last.node.next = head.node;
@@ -347,11 +333,12 @@ public class Heap
         }
         
         // Array size based on max possible rank: O(log_phi(n))
-        int arraySize = (int) Math.ceil(Math.log(size()) / Math.log(2)) + 2;
-        HeapNode[] bucket = new HeapNode[arraySize];
+        double phi = (1.0 + Math.sqrt(5.0)) / 2.0;
+        int arraySize = (int) Math.ceil(Math.log(size) / Math.log(phi)) + 1;
+        HeapNode[] bucket = new HeapNode[2 * arraySize];
 
         // Initialize all buckets to null
-        for (int i = 0; i < arraySize; i++) {
+        for (int i = 0; i < 2 * arraySize; i++) {
             bucket[i] = null;
         }
 
