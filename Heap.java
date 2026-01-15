@@ -198,20 +198,51 @@ public class Heap
 
     private void swapWithParent(HeapNode child) {
         HeapNode parent = child.parent;
-        // if node is root or no need to swap -> stop
+        
+        // בדיקה בסיסית - אם הגענו לשורש או שהסדר תקין, אין צורך ב-Swap
         if (parent == null || child.item.key >= parent.item.key) {
-            return;  // No swap needed
+            return;
         }
+
+        // שמירת ה-Items לפני ההחלפה לצורך עדכון מצביעי הערימה
+        HeapItem childItem = child.item;
+        HeapItem parentItem = parent.item;
+
+        // ביצוע ההחלפה (Swap) של ה-Items בין הצמתים
+        totalHeapifyCosts++; // עדכון העלות לפי דרישות הפרויקט 
+        child.item = parentItem;
+        parent.item = childItem;
         
-        // Swap the items (keys and info)
-        totalHeapifyCosts++;
-        HeapItem tempItem = child.item;
-        child.item = parent.item;
-        parent.item = tempItem;
-        
-        // Update node references in items
+        // עדכון ההתייחסות של ה-Item לצומת החדש שלו
         child.item.node = child;
         parent.item.node = parent;
+
+        /**
+         * תיקון קריטי: עדכון מצביעי הערימה (head, last, min).
+         * אם אחד ה-Items שהחלפנו הוא ה-head, ה-last או ה-min,
+         * עלינו לוודא שהם ימשיכו להצביע ל-Item שנמצא במיקום הנכון במבנה.
+         */
+        
+        // עדכון ה-head: אם הוא הצביע ל-Item שעכשיו ירד למטה, נעביר אותו ל-Item שעלה לשורש
+        if (this.head == childItem) {
+            this.head = parentItem;
+        } else if (this.head == parentItem) {
+            this.head = childItem;
+        }
+
+        // עדכון ה-last: באותו אופן
+        if (this.last == childItem) {
+            this.last = parentItem;
+        } else if (this.last == parentItem) {
+            this.last = childItem;
+        }
+
+        // עדכון ה-min: חיוני כדי ש-deleteMin יתחיל מהצומת הנכון בשכבת השורשים
+        if (this.min == childItem) {
+            this.min = parentItem;
+        } else if (this.min == parentItem) {
+            this.min = childItem;
+        }
     }
 
     private void cascadingCut(HeapNode x, HeapNode y){
@@ -274,7 +305,7 @@ public class Heap
     /**
      * 
      * Meld the heap with heap2
-     * pre: heap2.lazyMelds = this.lazyMelds AND heap2.lazyDecreaseKeys = this.lazyDecreaseKeys
+     * pre: heap2.lazyMelds = this.lazyMelds- AND heap2.lazyDecreaseKeys = this.lazyDecreaseKeys
      *
      */
     public void meld(Heap heap2)
@@ -381,8 +412,7 @@ public class Heap
     }
 
     private void toBucket(HeapNode[] bucket) {
-        // Insert all roots into buckets by rank, linking trees of same rank
-
+        // Insert all roots into buckets by rank, linking trees of same rank        
         // Break circularity of root list for traversal
         head.node.prev.next = null;
 
@@ -392,13 +422,25 @@ public class Heap
             x = x.next;    // save next before modifying y
             
             y.parent = null;  // roots have no parent
+            y.next = y;
+            y.prev = y;
+            
+            // DEBUG: Check incoming tree rank
+            if (y.rank > 28) {
+                System.err.println("HIGH RANK TREE: y.rank=" + y.rank + ", y.key=" + y.item.key + ", size=" + size + ", numTrees=" + numTrees);
+            }
             
             // Link trees of same rank
             while (bucket[y.rank] != null) {
                 y = link(y, bucket[y.rank]);
                 totalLinks++;
                 bucket[y.rank - 1] = null;  // B[y.rank - 1] ← null
+                // DEBUG: Check if new rank exceeds bucket size (after link increased rank)
+                if (y.rank >= bucket.length) {
+                    System.err.println("ERROR AFTER LINK: y.rank=" + y.rank + " >= bucket.length=" + bucket.length + ", size=" + size + ", numTrees=" + numTrees);
+                }
             }
+            
             bucket[y.rank] = y;
         }  
     }
