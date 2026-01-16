@@ -1,13 +1,12 @@
 /**
  * Heap
  *
- * An implementation of Fibonacci heap over positive integers 
- * with the possibility of not performing lazy melds and 
+ * An implementation of Fibonacci heap over positive integers
+ * with the possibility of not performing lazy melds and
  * the possibility of not performing lazy decrease keys.
  *
  */
-public class Heap
-{
+public class Heap {
     public final boolean lazyMelds;
     public final boolean lazyDecreaseKeys;
     public HeapItem min;
@@ -19,14 +18,12 @@ public class Heap
     public int totalLinks;
     public int totalCuts;
     public int totalHeapifyCosts;
-    
+
     /**
-     *
      * Constructor to initialize an empty heap.
      *
      */
-    public Heap(boolean lazyMelds, boolean lazyDecreaseKeys)
-    {
+    public Heap(boolean lazyMelds, boolean lazyDecreaseKeys) {
         this.lazyMelds = lazyMelds;
         this.lazyDecreaseKeys = lazyDecreaseKeys;
         this.min = null;
@@ -41,14 +38,13 @@ public class Heap
     }
 
     /**
-     * 
+     * Inserts a new item with the given key and info into the heap and returns the newly generated HeapNode.
+     *
      * pre: key > 0
      *
-     * Insert (key,info) into the heap and return the newly generated HeapNode.
-     *
+     * Time Complexity (WC): O(1)
      */
-    public HeapItem insert(int key, String info) 
-    {    
+    public HeapItem insert(int key, String info) {
         // create new node
         HeapItem nodeitem = new HeapItem(key, info);
         HeapNode node = new HeapNode(nodeitem, null, null, null, null, 0);
@@ -61,34 +57,33 @@ public class Heap
         heap2.min = nodeitem;
         heap2.head = nodeitem;
         heap2.last = nodeitem;
-        heap2.size = 1; 
+        heap2.size = 1;
         heap2.numTrees = 1;
 
         this.meld(heap2);
-        return nodeitem; 
+        return nodeitem;
 
     }
 
     /**
-     * Return the minimal HeapNode, null if empty.
+     * Returns the minimal HeapNode, or null if the heap is empty.
      *
+     * Time Complexity (WC): O(1)
      */
-    public HeapItem findMin()
-    {
-        return min; 
+    public HeapItem findMin() {
+        return min;
     }
 
     /**
-     * 
-     * Delete the minimal item.
+     * Deletes the minimal item from the heap.
      *
+     * Time Complexity (WC): O(logn), can be O(n) due to consolidation
      */
-    public void deleteMin()
-    {   // case 0 : empty heap
-        if (head == null){
+    public void deleteMin() { // case 0 : empty heap
+        if (head == null) {
             return; // heap is empty
         }
-        if (size == 1){
+        if (size == 1) {
             head = null;
             last = null;
             min = null;
@@ -99,17 +94,16 @@ public class Heap
         HeapNode minNode = min.node;
 
         // case 1 : only one tree
-        if (numTrees == 1){
+        if (numTrees == 1) {
             head = null;
             last = null;
-        }
-        else{ // case 2 : more than one tree
+        } else { // case 2 : more than one tree
             minNode.prev.next = minNode.next;
             minNode.next.prev = minNode.prev;
-            if (head == min){
+            if (head == min) {
                 head = minNode.next.item;
             }
-            if (last == min){
+            if (last == min) {
                 last = minNode.prev.item;
             }
         }
@@ -120,11 +114,11 @@ public class Heap
 
         // remove marked and parent pointer
         HeapNode child = minNode.child;
-        if(child != null){
+        if (child != null) {
             HeapNode current = child;
-            do{
+            do {
                 current.parent = null;
-                if (current.marked){
+                if (current.marked) {
                     current.marked = false;
                     numMarkedNodes--;
                 }
@@ -136,7 +130,7 @@ public class Heap
             heap2.head = child.item;
             heap2.last = child.prev.item;
             heap2.size = 0; // not adding size in meld
-            heap2.min = null; 
+            heap2.min = null;
             heap2.numTrees = minNode.rank;
             meld(heap2);
         }
@@ -152,37 +146,38 @@ public class Heap
             current = current.next;
         } while (current != head.node);
 
-        
-
     }
 
-    
-
     /**
+     * Decreases the key of x by diff and fixes the heap.
+     *
      * pre: 0<=diff<=x.key
-     * 
-     * Decrease the key of x by diff and fix the heap.
-     * 
+     *
+     * Time Complexity (WC): O(log n) 
      */
-    public void decreaseKey(HeapItem x, int diff) 
-    {   
+    public void decreaseKey(HeapItem x, int diff) {
         x.key = x.key - diff; // update key
         // update min if needed
-        if(x.key < min.key){
+        if (x.key < min.key) {
             min = x;
         }
         // if lazy decrease keys is on, do cascading cut
-        if(lazyDecreaseKeys){
-            if(x.node.parent != null && x.key < x.node.parent.item.key){
+        if (lazyDecreaseKeys) {
+            if (x.node.parent != null && x.key < x.node.parent.item.key) {
                 cascadingCut(x.node, x.node.parent);
             }
         }
         // else, do heapify up
-        else{
+        else {
             heapifyUp(x.node);
         }
     }
 
+    /**
+     * Moves the given node up the tree until the heap property is restored.
+     *
+     * Time Complexity (WC): O(log n)
+     */
     private void heapifyUp(HeapNode node) {
         // while node parent isnt root and node key < parent key do swap
         while (node.parent != null && node.item.key < node.parent.item.key) {
@@ -196,48 +191,45 @@ public class Heap
         }
     }
 
+    /**
+     * Swaps the given child node with its parent in the heap.
+     *
+     * Time Complexity (WC): O(1)
+     */
     private void swapWithParent(HeapNode child) {
         HeapNode parent = child.parent;
-        
-        // בדיקה בסיסית - אם הגענו לשורש או שהסדר תקין, אין צורך ב-Swap
+
+        // nothing to do
         if (parent == null || child.item.key >= parent.item.key) {
             return;
         }
 
-        // שמירת ה-Items לפני ההחלפה לצורך עדכון מצביעי הערימה
+        // swap items
         HeapItem childItem = child.item;
         HeapItem parentItem = parent.item;
 
-        // ביצוע ההחלפה (Swap) של ה-Items בין הצמתים
-        totalHeapifyCosts++; // עדכון העלות לפי דרישות הפרויקט 
+        // update heapify costs and swap
+        totalHeapifyCosts++; 
         child.item = parentItem;
         parent.item = childItem;
-        
-        // עדכון ההתייחסות של ה-Item לצומת החדש שלו
+
+        // update node pointers in items
         child.item.node = child;
         parent.item.node = parent;
 
-        /**
-         * תיקון קריטי: עדכון מצביעי הערימה (head, last, min).
-         * אם אחד ה-Items שהחלפנו הוא ה-head, ה-last או ה-min,
-         * עלינו לוודא שהם ימשיכו להצביע ל-Item שנמצא במיקום הנכון במבנה.
-         */
-        
-        // עדכון ה-head: אם הוא הצביע ל-Item שעכשיו ירד למטה, נעביר אותו ל-Item שעלה לשורש
+        // update head, last, min if needed
         if (this.head == childItem) {
             this.head = parentItem;
         } else if (this.head == parentItem) {
             this.head = childItem;
         }
 
-        // עדכון ה-last: באותו אופן
         if (this.last == childItem) {
             this.last = parentItem;
         } else if (this.last == parentItem) {
             this.last = childItem;
         }
 
-        // עדכון ה-min: חיוני כדי ש-deleteMin יתחיל מהצומת הנכון בשכבת השורשים
         if (this.min == childItem) {
             this.min = parentItem;
         } else if (this.min == parentItem) {
@@ -245,35 +237,44 @@ public class Heap
         }
     }
 
-    private void cascadingCut(HeapNode x, HeapNode y){
+    /**
+     * Performs a cascading cut operation starting from node x and its parent y.
+     *
+     * Time Complexity (WC): O(log n)
+     */
+    private void cascadingCut(HeapNode x, HeapNode y) {
         cut(x, y);
         // if y is not root
-        if (y.parent != null){
+        if (y.parent != null) {
             // if unmarked, mark it and stop
-            if (!y.marked){
+            if (!y.marked) {
                 y.marked = true;
                 numMarkedNodes++;
             }
             // else, continue cutting
-            else{
+            else {
                 cascadingCut(y, y.parent);
             }
         }
     }
 
-    private void cut(HeapNode x, HeapNode y){
+    /**
+     * Cuts the link between node x and its parent y, making x a new root.
+     *
+     * Time Complexity (WC): O(1)
+     */
+    private void cut(HeapNode x, HeapNode y) {
         totalCuts++;
         // remove x from child list of y
         x.parent = null;
-        if (x.marked){
+        if (x.marked) {
             numMarkedNodes--;
         }
         x.marked = false;
         y.rank--;
-        if (x.next == x){
+        if (x.next == x) {
             y.child = null;
-        }
-        else{
+        } else {
             y.child = x.next;
             x.prev.next = x.next;
             x.next.prev = x.prev;
@@ -286,30 +287,30 @@ public class Heap
         heap2.head = x.item;
         heap2.last = x.item;
         heap2.size = 0; // not adding size in meld
-        heap2.min = x.item; 
+        heap2.min = x.item;
         heap2.numTrees = 1;
         this.meld(heap2);
     }
+
     /**
      * Delete the x from the heap.
      *
+     * Time Complexity (WC): O(n)
      */
-    public void delete(HeapItem x) 
-    {    
+    public void delete(HeapItem x) {
         // decrease key to MIN_VALUE and delete min
         decreaseKey(x, Integer.MAX_VALUE);
         deleteMin();
     }
 
-
     /**
-     * 
-     * Meld the heap with heap2
-     * pre: heap2.lazyMelds = this.lazyMelds- AND heap2.lazyDecreaseKeys = this.lazyDecreaseKeys
+     * Melds the current heap with heap2.
      *
+     * pre: heap2.lazyMelds = this.lazyMelds AND heap2.lazyDecreaseKeys = this.lazyDecreaseKeys
+     *
+     * Time Complexity (WC): O(1) if lazyMelds is true, O(n) otherwise
      */
-    public void meld(Heap heap2)
-    {
+    public void meld(Heap heap2) {
         if (heap2 == null || heap2.head == null) {
             return; // nothing to meld
         }
@@ -353,16 +354,20 @@ public class Heap
         if (!this.lazyMelds) {
             succesiveLinking();
         }
-        return;          
+        return;
     }
-    
 
-     private void succesiveLinking() {
+    /**
+     * Consolidates the heap by linking trees of the same rank.
+     *
+     * Time Complexity (WC): O(n)
+     */
+    private void succesiveLinking() {
 
         if (size <= 1) {
             return; // no need to consolidate
         }
-        
+
         // Array size based on max possible rank: O(log_phi(n))
         double phi = (1.0 + Math.sqrt(5.0)) / 2.0;
         int arraySize = (int) Math.ceil(Math.log(size) / Math.log(phi)) + 1;
@@ -379,7 +384,11 @@ public class Heap
         last = x.prev.item;
     }
 
-
+    /**
+     * Links two trees of the same rank, making the tree with the smaller key the parent.
+     *
+     * Time Complexity (WC): O(1)
+     */
     private HeapNode link(HeapNode x, HeapNode y) {
         // Links two trees of same rank - smaller key becomes parent
 
@@ -389,7 +398,7 @@ public class Heap
             x = y;
             y = temp;
         }
-        
+
         // add y as child of x
         if (x.child == null) {
             // y becomes the only child of x
@@ -402,53 +411,54 @@ public class Heap
             x.child.next.prev = y;
             x.child.next = y;
         }
-        
+
         // update pointers and rank
         x.child = y;
         y.parent = x;
         x.rank++;
-        
+
         return x;
     }
 
+    /**
+     * Inserts all root nodes into the bucket array by rank, linking trees of the same rank.
+     *
+     * Time Complexity (WC): O(n)
+     */
     private void toBucket(HeapNode[] bucket) {
-        // Insert all roots into buckets by rank, linking trees of same rank        
+        // Insert all roots into buckets by rank, linking trees of same rank
         // Break circularity of root list for traversal
         head.node.prev.next = null;
 
         HeapNode x = head.node;
-        while(x != null) {
+        while (x != null) {
             HeapNode y = x;
-            x = x.next;    // save next before modifying y
-            
-            y.parent = null;  // roots have no parent
+            x = x.next; // save next before modifying y
+
+            y.parent = null; // roots have no parent
             y.next = y;
             y.prev = y;
-            
-            // DEBUG: Check incoming tree rank
-            if (y.rank > 28) {
-                System.err.println("HIGH RANK TREE: y.rank=" + y.rank + ", y.key=" + y.item.key + ", size=" + size + ", numTrees=" + numTrees);
-            }
-            
+
             // Link trees of same rank
             while (bucket[y.rank] != null) {
                 y = link(y, bucket[y.rank]);
                 totalLinks++;
-                bucket[y.rank - 1] = null;  // B[y.rank - 1] ← null
-                // DEBUG: Check if new rank exceeds bucket size (after link increased rank)
-                if (y.rank >= bucket.length) {
-                    System.err.println("ERROR AFTER LINK: y.rank=" + y.rank + " >= bucket.length=" + bucket.length + ", size=" + size + ", numTrees=" + numTrees);
-                }
+                bucket[y.rank - 1] = null; // B[y.rank - 1] ← null
             }
-            
+
             bucket[y.rank] = y;
-        }  
+        }
     }
-      
+
+    /**
+     * Rebuilds the root list from the bucket array after consolidation.
+     *
+     * Time Complexity (WC): O(logn)
+     */
     private HeapNode fromBucket(HeapNode[] bucket) {
         // Rebuild root list from buckets
-        
-        HeapNode x = null;  // new root list head
+
+        HeapNode x = null; // new root list head
         numTrees = 0;
 
         for (int i = 0; i < bucket.length; i++) {
@@ -471,81 +481,76 @@ public class Heap
         return x;
     }
 
+    /**
+     * Consolidates the root list into the bucket array and rebuilds the root list.
+     *
+     * Time Complexity (WC): O(n)
+     */
     private HeapNode consolidate(HeapNode[] bucket) {
         // Consolidate the root list into the bucket array
         toBucket(bucket);
         return fromBucket(bucket);
     }
-    
-    /**
-     * 
-     * Return the number of elements in the heap
-     *   
-     */
-    public int size()
-    {
-        return size; // should be replaced by student code
-    }
-
 
     /**
-     * Return the number of trees in the heap.
-     * 
+     * Returns the number of elements in the heap.
+     *
+     * Time Complexity (WC): O(1)
      */
-    public int numTrees()
-    {
-        return numTrees; // should be replaced by student code
+    public int size() {
+        return size;
     }
-    
-    
-    /**
-     * Return the number of marked nodes in the heap.
-     * 
-     */
-    public int numMarkedNodes()
-    {
-        return numMarkedNodes; // should be replaced by student code
-    }
-    
-    
-    /**
-     * 
-     * Return the total number of links.
-     * 
-     */
-    public int totalLinks()
-    {
-        return totalLinks; // should be replaced by student code
-    }
-    
-    
-    /**
-     * 
-     * Return the total number of cuts.
-     * 
-     */
-    public int totalCuts()
-    {
-        return totalCuts; // should be replaced by student code
-    }
-    
 
     /**
-     * 
-     * Return the total heapify costs.
-     * 
+     * Returns the number of trees in the heap.
+     *
+     * Time Complexity (WC): O(1)
      */
-    public int totalHeapifyCosts()
-    {
-        return totalHeapifyCosts; // should be replaced by student code
+    public int numTrees() {
+        return numTrees;
     }
-    
-    
+
+    /**
+     * Returns the number of marked nodes in the heap.
+     *
+     * Time Complexity (WC): O(1)
+     */
+    public int numMarkedNodes() {
+        return numMarkedNodes;
+    }
+
+    /**
+     * Returns the total number of links performed in the heap.
+     *
+     * Time Complexity (WC): O(1)
+     */
+    public int totalLinks() {
+        return totalLinks;
+    }
+
+    /**
+     * Returns the total number of cuts performed in the heap.
+     *
+     * Time Complexity (WC): O(1)
+     */
+    public int totalCuts() {
+        return totalCuts;
+    }
+
+    /**
+     * Returns the total heapify costs.
+     *
+     * Time Complexity (WC): O(1)
+     */
+    public int totalHeapifyCosts() {
+        return totalHeapifyCosts;
+    }
+
     /**
      * Class implementing a node in a Heap.
-     *  
+     * 
      */
-    public static class HeapNode{
+    public static class HeapNode {
         public HeapItem item;
         public HeapNode child;
         public HeapNode next;
@@ -554,8 +559,7 @@ public class Heap
         public int rank;
         public boolean marked;
 
-        public HeapNode(HeapItem item, HeapNode child, HeapNode next, HeapNode prev, HeapNode parent, int rank) 
-        {
+        public HeapNode(HeapItem item, HeapNode child, HeapNode next, HeapNode prev, HeapNode parent, int rank) {
             this.item = item;
             this.child = child;
             this.next = next;
@@ -565,16 +569,16 @@ public class Heap
             this.marked = false;
         }
     }
-    
+
     /**
      * Class implementing an item in a Heap.
-     *  
+     * 
      */
-    public static class HeapItem{
+    public static class HeapItem {
         public HeapNode node;
         public int key;
         public String info;
-        
+
         public HeapItem(int key, String info) {
             this.key = key;
             this.info = info;
@@ -582,6 +586,4 @@ public class Heap
         }
     }
 
-
 }
-
