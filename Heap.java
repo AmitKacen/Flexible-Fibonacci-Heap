@@ -6,6 +6,13 @@
  * the possibility of not performing lazy decrease keys.
  *
  */
+//id1: 212677884
+//name1: Amit Kacen
+//username1: amitkacen
+//id2: 322377490
+//name2: Dan Remeniuk
+//username2: danremeniuk
+
 public class Heap {
     public final boolean lazyMelds;
     public final boolean lazyDecreaseKeys;
